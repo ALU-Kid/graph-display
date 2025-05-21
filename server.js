@@ -2,7 +2,7 @@
 
 const path = require('path');
 const express = require('express');
-const { engine } = require('express-handlebars');
+const exphbs = require('express-handlebars');
 const axios = require('axios');
 const cron = require('node-cron');
 const fs = require('fs').promises;
@@ -26,15 +26,13 @@ let stats = {
 const app = express();
 
 // Configure Handlebars
-app.engine('handlebars', engine({
+app.engine('handlebars', exphbs({
   defaultLayout: 'main',
   helpers: {
-    // Custom helper for JSON stringification
-    json: function(context) {
+    json: function (context) {
       return JSON.stringify(context);
     },
-    // Format date helper
-    formatDate: function(date) {
+    formatDate: function (date) {
       return new Date(date).toLocaleDateString();
     }
   }
