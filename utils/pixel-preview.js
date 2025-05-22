@@ -1,4 +1,4 @@
-// utils/pixel-preview.js - Complete Node 10 Compatible Version (FIXED)
+// utils/pixel-preview.js - Complete Node 10 Compatible Version with SVG Animation
 
 // Complete pixel font
 const PIXEL_FONT = {
@@ -173,7 +173,9 @@ function generateCommitPlan(message, options) {
         commits.push({
           date: commitDate.toISOString().split('T')[0],
           intensity: intensity,
-          message: message
+          message: message,
+          x: week,
+          y: day
         });
       }
     }
@@ -183,7 +185,7 @@ function generateCommitPlan(message, options) {
 }
 
 /**
- * Generate preview data for frontend (THIS WAS MISSING!)
+ * Generate preview data for frontend
  */
 function generatePreviewData(message, options) {
   options = options || {};
@@ -203,6 +205,151 @@ function generatePreviewData(message, options) {
     message: message,
     commitCount: commitCount
   };
+}
+
+/**
+ * Render animated SVG for GitHub contribution graph visualization
+ */
+function renderAnimatedSVG(commitPlan, options) {
+  options = options || {};
+  
+  var defaults = {
+    cellSize: 10,
+    cellGap: 2,
+    colors: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
+    darkMode: false,
+    animationDuration: 3,
+    staggerDelay: 0.05,
+    message: 'GITGRAPH'
+  };
+  
+  var config = {
+    cellSize: options.cellSize || defaults.cellSize,
+    cellGap: options.cellGap || defaults.cellGap,
+    colors: options.colors || defaults.colors,
+    darkMode: options.darkMode || defaults.darkMode,
+    animationDuration: options.animationDuration || defaults.animationDuration,
+    staggerDelay: options.staggerDelay || defaults.staggerDelay,
+    message: options.message || defaults.message
+  };
+  
+  if (config.darkMode) {
+    config.colors = ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'];
+  }
+  
+  if (!commitPlan || commitPlan.length === 0) {
+    commitPlan = [{ x: 0, y: 0, intensity: 4 }];
+  }
+  
+  // Calculate SVG dimensions
+  var maxX = Math.max.apply(Math, commitPlan.map(function(commit) { return commit.x; }));
+  var maxY = Math.max.apply(Math, commitPlan.map(function(commit) { return commit.y; }));
+  var gridWidth = Math.max(maxX + 1, 52);
+  var gridHeight = Math.max(maxY + 1, 7);
+  
+  var svgWidth = gridWidth * (config.cellSize + config.cellGap) + config.cellGap;
+  var svgHeight = gridHeight * (config.cellSize + config.cellGap) + config.cellGap + 40; // Extra space for text
+  
+  // Generate background grid
+  var backgroundSquares = '';
+  for (var x = 0; x < gridWidth; x++) {
+    for (var y = 0; y < gridHeight; y++) {
+      var squareX = x * (config.cellSize + config.cellGap) + config.cellGap;
+      var squareY = y * (config.cellSize + config.cellGap) + config.cellGap + 30; // Offset for text
+      
+      backgroundSquares += '    <rect x="' + squareX + '" y="' + squareY + '" ' +
+                          'width="' + config.cellSize + '" height="' + config.cellSize + '" ' +
+                          'fill="' + config.colors[0] + '" rx="1" />\n';
+    }
+  }
+  
+  // Generate animated commit squares
+  var animatedSquares = '';
+  commitPlan.forEach(function(commit, index) {
+    var squareX = commit.x * (config.cellSize + config.cellGap) + config.cellGap;
+    var squareY = commit.y * (config.cellSize + config.cellGap) + config.cellGap + 30; // Offset for text
+    var intensity = Math.min(Math.max(commit.intensity || 1, 1), 4);
+    var color = config.colors[intensity];
+    var animationDelay = commit.x * config.staggerDelay;
+    
+    animatedSquares += '    <rect x="' + squareX + '" y="' + squareY + '" ' +
+                      'width="' + config.cellSize + '" height="' + config.cellSize + '" ' +
+                      'fill="' + color + '" rx="1" opacity="0">\n' +
+                      '      <animate attributeName="opacity" values="0;1" ' +
+                      'dur="' + config.animationDuration + 's" begin="' + animationDelay + 's" ' +
+                      'fill="freeze" />\n' +
+                      '      <animate attributeName="fill" values="' + config.colors[0] + ';' + color + '" ' +
+                      'dur="' + config.animationDuration + 's" begin="' + animationDelay + 's" ' +
+                      'fill="freeze" />\n' +
+                      '    </rect>\n';
+  });
+  
+  // Generate day labels (S M T W T F S)
+  var dayLabels = '';
+  var days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  for (var d = 0; d < days.length; d++) {
+    var labelY = d * (config.cellSize + config.cellGap) + config.cellGap + 30 + (config.cellSize / 2) + 3;
+    dayLabels += '    <text x="' + (config.cellGap - 5) + '" y="' + labelY + '" ' +
+                'class="day-label">' + days[d] + '</text>\n';
+  }
+  
+  // Generate month labels
+  var monthLabels = '';
+  var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (var m = 0; m < Math.min(months.length, Math.floor(gridWidth / 4.3)); m++) {
+    var labelX = m * 4.3 * (config.cellSize + config.cellGap) + config.cellGap;
+    monthLabels += '    <text x="' + labelX + '" y="20" class="month-label">' + months[m] + '</text>\n';
+  }
+  
+  // Generate stats text
+  var statsText = '';
+  if (options.stats) {
+    var stats = options.stats;
+    statsText = '    <text x="10" y="' + (svgHeight - 10) + '" class="stats-text">' +
+               'Energy: ' + (stats.kwhCharged || 0) + 'kWh | Sessions: ' + (stats.sessions || 0) + ' | ' +
+               'Weather: ' + (stats.weather ? stats.weather.temp + '°C ' + stats.weather.condition : 'N/A') +
+               '</text>\n';
+  }
+  
+  // Build complete SVG
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" ' +
+           'width="' + svgWidth + '" height="' + svgHeight + '" ' +
+           'viewBox="0 0 ' + svgWidth + ' ' + svgHeight + '">\n' +
+           '  <style>\n' +
+           '    .title-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; ' +
+           'font-size: 16px; font-weight: bold; fill: ' + (config.darkMode ? '#f0f6fc' : '#24292f') + '; }\n' +
+           '    .day-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; ' +
+           'font-size: 9px; fill: ' + (config.darkMode ? '#7d8590' : '#656d76') + '; text-anchor: middle; }\n' +
+           '    .month-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; ' +
+           'font-size: 10px; fill: ' + (config.darkMode ? '#7d8590' : '#656d76') + '; }\n' +
+           '    .stats-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; ' +
+           'font-size: 10px; fill: ' + (config.darkMode ? '#7d8590' : '#656d76') + '; }\n' +
+           '    .background { fill: ' + (config.darkMode ? '#0d1117' : '#ffffff') + '; }\n' +
+           '  </style>\n' +
+           '  \n' +
+           '  <!-- Background -->\n' +
+           '  <rect width="100%" height="100%" class="background" />\n' +
+           '  \n' +
+           '  <!-- Title -->\n' +
+           '  <text x="10" y="15" class="title-text">GitGraph: ' + config.message + '</text>\n' +
+           '  \n' +
+           '  <!-- Month Labels -->\n' +
+           monthLabels +
+           '  \n' +
+           '  <!-- Day Labels -->\n' +
+           dayLabels +
+           '  \n' +
+           '  <!-- Background Grid -->\n' +
+           backgroundSquares +
+           '  \n' +
+           '  <!-- Animated Commit Squares -->\n' +
+           animatedSquares +
+           '  \n' +
+           '  <!-- Stats -->\n' +
+           statsText +
+           '</svg>';
+  
+  return svg;
 }
 
 /**
@@ -302,8 +449,9 @@ module.exports = {
   renderToCanvas: renderToCanvas,
   previewGitHubMessage: previewGitHubMessage,
   generateCommitPlan: generateCommitPlan,
-  generatePreviewData: generatePreviewData,  // THIS WAS THE MISSING FUNCTION!
+  generatePreviewData: generatePreviewData,
   validateMessage: validateMessage,
   getMessageWidth: getMessageWidth,
+  renderAnimatedSVG: renderAnimatedSVG, // NEW: SVG Animation function
   PIXEL_FONT: PIXEL_FONT
 };
