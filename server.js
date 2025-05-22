@@ -1,4 +1,4 @@
-// server.js - Enhanced GitGraph Animator with Professional SVG Animation
+// server.js - GitGraph Animator with Personalized SVG
 
 const path = require('path');
 const express = require('express');
@@ -12,9 +12,9 @@ const execPromise = util.promisify(exec);
 
 require('dotenv').config();
 
-// Import our enhanced modules
+// Import our modules - CHANGED TO PERSONALIZED VERSION
 const SmartMessageGenerator = require('./services/messageGenerator');
-const { createAnimatedContributionGraph, GITHUB_COLORS } = require('./utils/enhanced-svg-generator');
+const { createPersonalizedSVG, GITHUB_COLORS } = require('./utils/personalized-svg-generator');
 const { generateCommitPlan, generatePreviewData, validateMessage, messageToPixels } = require('./utils/pixel-preview');
 
 // Initialize message generator
@@ -186,21 +186,19 @@ async function fetchAirtableData() {
   }
 }
 
-// Enhanced SVG Animation Functions
+// UPDATED: Personalized SVG Animation Function
 async function renderSVG(message, options) {
   try {
-    console.log('🎨 Rendering enhanced animated SVG for:', message);
+    console.log('🎨 Rendering personalized animated SVG for:', message);
     
-    // Use the enhanced generator with professional styling
-    var svg = createAnimatedContributionGraph({
-      title: 'GitGraph Animator',
-      message: message || 'GITGRAPH',
+    // Use the personalized generator with custom features
+    var svg = createPersonalizedSVG({
+      message: message || 'I BUILD FUN THINGS',
       theme: options && options.darkMode === false ? 'light' : 'dark',
       animationType: options && options.animationType || 'wave',
       animationDuration: options && options.animationDuration || 2,
       scrollingEnabled: true,
       scrollSpeed: options && options.scrollSpeed || 15,
-      showStats: true,
       stats: stats
     });
     
@@ -219,7 +217,7 @@ async function renderSVG(message, options) {
       console.log('⚠️ History save failed, but main SVG saved');
     }
     
-    console.log('🖼️ Enhanced animated SVG rendered to:', outPath);
+    console.log('🖼️ Personalized animated SVG rendered to:', outPath);
     return true;
   } catch (err) {
     console.error('❌ SVG render failed:', err.message);
@@ -523,32 +521,31 @@ app.get('/', function(req, res) {
   };
   
   res.render('dashboard', {
-    title: 'Enhanced GitGraph Animator',
+    title: 'GitGraph Animator - Personalized',
     currentMessage: currentMessage,
     messageQueue: messageQueue,
     stats: stats,
     recentHistory: recentHistory,
     queueStatus: queueStatus,
+    embedUrl: req.protocol + '://' + req.get('host') + '/svg',
     layout: 'main'
   });
 });
 
-// Enhanced SVG Route - Serves the animated SVG with proper headers
+// UPDATED: Personalized SVG Route
 app.get('/svg', async function(req, res) {
   try {
     // Get current message or use default
-    var message = currentMessage || 'WELCOME TO GITGRAPH';
+    var message = currentMessage || 'I BUILD FUN THINGS';
     
-    // Generate SVG with enhanced styling
-    var svg = createAnimatedContributionGraph({
-      title: 'GitGraph Animator',
+    // Generate SVG with personalized styling
+    var svg = createPersonalizedSVG({
       message: message,
       theme: req.query.theme || 'dark',
       animationType: req.query.animation || 'wave',
       animationDuration: 2,
       scrollingEnabled: true,
       scrollSpeed: 15,
-      showStats: true,
       stats: stats
     });
     
@@ -569,10 +566,10 @@ app.get('/svg', async function(req, res) {
     console.error('❌ Error serving SVG:', err.message);
     
     // Generate a fallback SVG
-    var fallbackSVG = createAnimatedContributionGraph({
+    var fallbackSVG = createPersonalizedSVG({
       message: 'ERROR LOADING',
       theme: 'dark',
-      showStats: false
+      stats: {}
     });
     
     res.setHeader('Content-Type', 'image/svg+xml');
@@ -591,29 +588,43 @@ app.get('/api/messages', function(req, res) {
 
 app.post('/api/messages', async function(req, res) {
   try {
+    console.log('📨 Received message request:', req.body); // Debug log
+    
     var message = (req.body.message || '').toString().trim().toUpperCase();
     var validation = validateMessage(message);
     
     if (!validation.valid) {
+      console.log('❌ Validation failed:', validation.error);
       return res.status(400).json({ error: validation.error });
     }
     
     // Avoid duplicates
     if (messageQueue.indexOf(message) !== -1) {
+      console.log('⚠️ Duplicate message');
       return res.status(400).json({ error: 'Message already in queue' });
     }
     
     messageQueue.push(message);
+    console.log('✅ Added to queue:', message);
+    console.log('📋 Queue now has', messageQueue.length, 'messages');
+    
     await saveData();
     
-    // Auto-process the queue
-    await processQueue();
+    // Auto-process if no current message
+    if (!currentMessage) {
+      await processQueue();
+    }
     
-    console.log('➕ Added message to queue:', message);
-    res.json({ success: true, message: 'Message added to queue and processed', queue: messageQueue });
+    console.log('➕ Message successfully added to queue');
+    res.json({ 
+      success: true, 
+      message: 'Message added to queue', 
+      queue: messageQueue,
+      queueLength: messageQueue.length
+    });
   } catch (err) {
     console.error('❌ Error adding message:', err);
-    res.status(500).json({ error: 'Failed to add message' });
+    res.status(500).json({ error: 'Failed to add message: ' + err.message });
   }
 });
 
@@ -678,12 +689,12 @@ app.post('/api/preview', async function(req, res) {
     
     var previewData = generatePreviewData(message);
     
-    // Generate preview SVG
-    var previewSvg = createAnimatedContributionGraph({
+    // Generate preview SVG with personalized style
+    var previewSvg = createPersonalizedSVG({
       message: message,
       theme: req.body.theme || 'dark',
       animationType: 'fade',
-      showStats: false
+      stats: {}
     });
     
     res.json({ 
@@ -742,7 +753,7 @@ app.post('/api/process-queue', async function(req, res) {
   }
 });
 
-// New API route to manually trigger SVG generation
+// Manual SVG generation endpoint
 app.post('/api/generate-svg', async function(req, res) {
   try {
     var message = req.body.message || currentMessage;
@@ -794,8 +805,8 @@ async function startServer() {
     try {
       await fs.access(path.join(__dirname, 'output', 'contribution-preview.svg'));
     } catch (err) {
-      console.log('🎨 Creating initial welcome SVG...');
-      await renderSVG('WELCOME TO GITGRAPH');
+      console.log('🎨 Creating initial personalized SVG...');
+      await renderSVG('I BUILD FUN THINGS');
     }
     
     // Schedule cron jobs
@@ -828,7 +839,7 @@ async function startServer() {
 
     var PORT = process.env.PORT || 3001;
     app.listen(PORT, function() {
-      console.log('\n🚀 Enhanced GitGraph Animator running!');
+      console.log('\n🚀 Personalized GitGraph Animator running!');
       console.log('📍 Dashboard: http://localhost:' + PORT);
       console.log('🖼️ SVG Endpoint: http://localhost:' + PORT + '/svg');
       console.log('📊 Queue: ' + messageQueue.length + ' messages');
@@ -848,8 +859,11 @@ async function startServer() {
         console.log('🎨 SVG Mode: Animation only (no git commits)');
       }
       
-      console.log('\n✨ System ready! Add messages via the web interface or API');
-      console.log('🎯 Your SVG URL for README: ![Contribution Preview](http://localhost:' + PORT + '/svg)\n');
+      console.log('\n✨ Personalized SVG Features:');
+      console.log('   - Rotating text: "I build fun things" / "why are you here" / "BUY GOLD!!!"');
+      console.log('   - Tech stack: JS, TypeScript, Python, Pandas, Flask');
+      console.log('   - Company: Kabisa');
+      console.log('\n🎯 Your personalized SVG URL: ![Contribution Preview](http://localhost:' + PORT + '/svg)\n');
     });
     
   } catch (err) {
