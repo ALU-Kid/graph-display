@@ -910,3 +910,199 @@
         });
         
         if (response.ok) {
+          showNotification('Queue rotated!', 'success');
+          setTimeout(() => location.reload(), 500);
+        }
+      } catch (error) {
+        showNotification('Failed to rotate queue', 'error');
+      }
+    }
+
+    async function moveToTop(message) {
+      // This would need a new API endpoint to implement
+      showNotification('Moving to top...', 'info');
+      // For now, just use rotate
+      await rotateQueue();
+    }
+
+    async function processQueue() {
+      const btn = event.target;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="loading"></span> Processing...';
+      btn.disabled = true;
+      
+      try {
+        const response = await fetch('/api/process-queue', {
+          method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showNotification('Queue processed successfully!', 'success');
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showNotification(data.error || 'Processing failed', 'error');
+        }
+      } catch (error) {
+        showNotification('Network error', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Stats & Generation
+    async function refreshStats() {
+      try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        
+        showNotification('Stats refreshed!', 'success');
+        
+        // Update UI with new stats if needed
+        console.log('📊 Updated stats:', data);
+      } catch (error) {
+        showNotification('Failed to refresh stats', 'error');
+      }
+    }
+
+    async function generateMessages() {
+      const count = document.getElementById('gen-count').value;
+      const container = document.getElementById('generated-messages');
+      
+      container.innerHTML = '<div style="text-align: center; padding: 20px;"><span class="loading"></span> Generating...</div>';
+      
+      try {
+        const response = await fetch('/api/generate-smart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count: parseInt(count), useAI: false })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.messages.length > 0) {
+          container.innerHTML = '';
+          
+          data.messages.forEach(msg => {
+            const msgEl = document.createElement('div');
+            msgEl.style.cssText = 'padding: 8px 12px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
+            msgEl.innerHTML = `
+              <span style="font-family: monospace; font-size: 0.875rem;">${msg}</span>
+              <button class="btn btn-sm btn-secondary" onclick="previewMessage('${msg}')">
+                Use
+              </button>
+            `;
+            container.appendChild(msgEl);
+          });
+          
+          showNotification(`Generated ${data.messages.length} messages!`, 'success');
+          
+          if (data.addedToQueue > 0) {
+            setTimeout(() => location.reload(), 2000);
+          }
+        } else {
+          container.innerHTML = '<div class="empty-state"><p>No messages generated</p></div>';
+        }
+      } catch (error) {
+        container.innerHTML = '<div class="empty-state"><p>Generation failed</p></div>';
+        showNotification('Generation failed', 'error');
+      }
+    }
+
+    async function generateWithAI() {
+      const btn = event.target;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="loading"></span> AI Thinking...';
+      btn.disabled = true;
+      
+      try {
+        const response = await fetch('/api/generate-smart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count: 5, useAI: true })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showNotification(`AI generated ${data.messages.length} messages!`, 'success');
+          setTimeout(() => location.reload(), 2000);
+        } else {
+          showNotification(data.error || 'AI generation failed', 'error');
+        }
+      } catch (error) {
+        showNotification('AI generation failed', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Utility Functions
+    function exportData() {
+      window.open('/api/export', '_blank');
+      showNotification('Export started', 'info');
+    }
+
+    function openSettings() {
+      showNotification('Settings panel coming soon!', 'info');
+    }
+
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.innerHTML = `
+        <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
+        <span>${message}</span>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 4000);
+    }
+
+    // Add slideOut animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideOut {
+        to {
+          transform: translateX(120%);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+          case 'Enter':
+            e.preventDefault();
+            addMessage();
+            break;
+          case 'r':
+            e.preventDefault();
+            refreshSVG();
+            break;
+          case 'g':
+            e.preventDefault();
+            generateMessages();
+            break;
+          case 'p':
+            e.preventDefault();
+            processQueue();
+            break;
+        }
+      }
+    });
+
+    console.log('⌨️ Shortcuts: Ctrl+Enter (add), Ctrl+R (refresh), Ctrl+G (generate), Ctrl+P (process)');
+  </script>
+</body>
+</html>

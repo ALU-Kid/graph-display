@@ -1,8 +1,8 @@
-// utils/enhanced-svg-generator.js - Professional GitHub-style animated SVG generator
+// utils/enhanced-svg-generator.js - Fixed version with proper XML escaping
 
 /**
  * Enhanced SVG generator for creating beautiful, animated GitHub contribution graphs
- * with proper alignment, smooth animations, and professional styling
+ * with proper XML escaping and error handling
  */
 
 const GITHUB_COLORS = {
@@ -24,6 +24,19 @@ const GITHUB_COLORS = {
 };
 
 /**
+ * Escape special characters for XML/SVG
+ */
+function escapeXML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
  * Create a professional animated SVG contribution graph
  */
 function createAnimatedContributionGraph(options) {
@@ -37,8 +50,8 @@ function createAnimatedContributionGraph(options) {
     cellGap: 2,
     
     // Display options
-    title: options.title || 'GitGraph Animator',
-    message: options.message || 'HELLO WORLD',
+    title: escapeXML(options.title || 'GitGraph Animator'),
+    message: escapeXML(options.message || 'HELLO WORLD'),
     theme: options.theme || 'dark',
     
     // Animation settings
@@ -79,55 +92,43 @@ function createAnimatedContributionGraph(options) {
   const needsScrolling = config.scrollingEnabled && messageWidth > config.weeks;
   
   // Build the SVG
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
+  let svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
   <defs>
-    <style>
+    <style type="text/css">
+      <![CDATA[
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
       
       .contribution-graph-bg { fill: ${colors.bg}; }
       .contribution-cell { stroke: none; }
       .graph-title { 
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 16px;
         font-weight: 600;
         fill: ${colors.text};
       }
       .graph-subtitle {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 12px;
         font-weight: 400;
         fill: ${colors.textMuted};
       }
       .day-label {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 10px;
         fill: ${colors.textMuted};
       }
       .month-label {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 10px;
         fill: ${colors.textMuted};
       }
       .stats-text {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 11px;
         fill: ${colors.textMuted};
       }
-      
-      /* Animation keyframes */
-      @keyframes fadeIn {
-        from { opacity: 0; transform: scale(0.8); }
-        to { opacity: 1; transform: scale(1); }
-      }
-      
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-      }
-      
-      .animated-cell {
-        animation: fadeIn 0.5s ease-out forwards;
-      }
+      ]]>
     </style>
     
     <!-- Gradient for special effects -->
@@ -171,7 +172,7 @@ function createAnimatedContributionGraph(options) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const weeksPerMonth = config.weeks / 12;
   for (let i = 0; i < 12; i++) {
-    const x = i * weeksPerMonth * (config.cellSize + config.cellGap);
+    const x = Math.floor(i * weeksPerMonth * (config.cellSize + config.cellGap));
     svg += `\n    <text x="${x}" y="0" class="month-label">${months[i]}</text>`;
   }
   
@@ -196,22 +197,25 @@ function createAnimatedContributionGraph(options) {
   
   // Create scrolling container if needed
   if (needsScrolling) {
+    const scrollDistance = (messageWidth - config.weeks) * (config.cellSize + config.cellGap);
     svg += `\n    <g>
       <animateTransform
         attributeName="transform"
         type="translate"
-        values="0,0; ${-(messageWidth - config.weeks) * (config.cellSize + config.cellGap)},0; ${-(messageWidth - config.weeks) * (config.cellSize + config.cellGap)},0; 0,0"
+        values="0,0; -${scrollDistance},0; -${scrollDistance},0; 0,0"
         dur="${config.scrollSpeed}s"
         repeatCount="indefinite" />`;
   }
   
   // Generate cells
   let cellIndex = 0;
-  for (let week = 0; week < Math.max(config.weeks, messageWidth); week++) {
+  const maxWeeks = needsScrolling ? messageWidth : config.weeks;
+  
+  for (let week = 0; week < maxWeeks; week++) {
     for (let day = 0; day < config.days; day++) {
       const x = week * (config.cellSize + config.cellGap);
       const y = day * (config.cellSize + config.cellGap);
-      const intensity = contributionData[week] && contributionData[week][day] || 0;
+      const intensity = (contributionData[week] && contributionData[week][day]) || 0;
       const color = colors.levels[intensity];
       
       // Calculate animation delay based on animation type
@@ -236,19 +240,26 @@ function createAnimatedContributionGraph(options) {
         y="${y}" 
         width="${config.cellSize}" 
         height="${config.cellSize}" 
-        class="contribution-cell animated-cell" 
+        class="contribution-cell" 
         fill="${color}" 
         rx="2" 
         ry="2"
-        style="animation-delay: ${delay}s">`;
-      
-      // Add hover effect
-      svg += `\n        <animate 
+        opacity="0">
+        <animate 
           attributeName="opacity" 
-          values="1;0.7;1" 
-          dur="0.2s" 
-          begin="mouseover" 
-          end="mouseout" />`;
+          values="0;1" 
+          dur="${config.animationDuration}s" 
+          begin="${delay}s" 
+          fill="freeze" />`;
+      
+      if (intensity > 0) {
+        svg += `\n        <animate 
+          attributeName="fill" 
+          values="${colors.levels[0]};${color}" 
+          dur="${config.animationDuration}s" 
+          begin="${delay}s" 
+          fill="freeze" />`;
+      }
       
       svg += `\n      </rect>`;
       cellIndex++;
@@ -267,13 +278,14 @@ function createAnimatedContributionGraph(options) {
     let statsText = [];
     
     if (config.stats.kwhCharged !== undefined) {
-      statsText.push(`Energy: ${config.stats.kwhCharged}kWh`);
+      statsText.push(`Energy: ${escapeXML(config.stats.kwhCharged)}kWh`);
     }
     if (config.stats.sessions !== undefined) {
-      statsText.push(`Sessions: ${config.stats.sessions}`);
+      statsText.push(`Sessions: ${escapeXML(config.stats.sessions)}`);
     }
     if (config.stats.weather) {
-      statsText.push(`${config.stats.weather.temp}°C ${config.stats.weather.condition}`);
+      const weather = config.stats.weather;
+      statsText.push(`${escapeXML(weather.temp)}°C ${escapeXML(weather.condition || '')}`);
     }
     
     if (statsText.length > 0) {
@@ -353,8 +365,11 @@ function generateContributionPattern(message, options) {
   const pattern = [];
   let currentWeek = 0;
   
-  for (let i = 0; i < message.length; i++) {
-    const char = message[i].toUpperCase();
+  // Clean message - remove unsupported characters
+  const cleanMessage = message.toUpperCase().replace(/[^A-Z0-9\s!?.,:\-+=]/g, '');
+  
+  for (let i = 0; i < cleanMessage.length; i++) {
+    const char = cleanMessage[i];
     const charPattern = PIXEL_FONT[char];
     
     if (charPattern) {
@@ -373,7 +388,7 @@ function generateContributionPattern(message, options) {
       }
       
       // Add spacing between characters
-      if (i < message.length - 1) {
+      if (i < cleanMessage.length - 1) {
         pattern[currentWeek] = [0,0,0,0,0,0,0];
         currentWeek++;
       }
@@ -396,8 +411,10 @@ function getMessagePixelWidth(message) {
   };
   
   let width = 0;
-  for (let i = 0; i < message.length; i++) {
-    const char = message[i].toUpperCase();
+  const cleanMessage = message.toUpperCase().replace(/[^A-Z0-9\s!?.,:\-+=]/g, '');
+  
+  for (let i = 0; i < cleanMessage.length; i++) {
+    const char = cleanMessage[i];
     width += (CHAR_WIDTHS[char] || 3) + 1; // character width + spacing
   }
   
