@@ -1,4 +1,4 @@
-// server.js - Complete Enhanced GitGraph Animator (Node 10 Compatible)
+// server.js - Complete Enhanced GitGraph Animator with SVG Animation (Node 10 Compatible)
 
 const path = require('path');
 const express = require('express');
@@ -14,7 +14,7 @@ require('dotenv').config();
 
 // Import our enhanced modules
 const SmartMessageGenerator = require('./services/messageGenerator');
-const { generateCommitPlan, generatePreviewData, validateMessage } = require('./utils/pixel-preview');
+const { generateCommitPlan, generatePreviewData, validateMessage, renderAnimatedSVG } = require('./utils/pixel-preview');
 
 // Initialize message generator
 const messageGenerator = new SmartMessageGenerator({
@@ -63,18 +63,23 @@ const FONT_FILE = path.join(__dirname, 'data', 'font-data.json');
 
 // Utility Functions
 async function ensureDataDir() {
-  const dataDir = path.join(__dirname, 'data');
+  var dataDir = path.join(__dirname, 'data');
+  var outputDir = path.join(__dirname, 'output');
+  var historyDir = path.join(__dirname, 'output', 'history');
+  
   try {
     await fs.mkdir(dataDir, { recursive: true });
-    console.log('📁 Data directory ensured');
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.mkdir(historyDir, { recursive: true });
+    console.log('📁 Data and output directories ensured');
   } catch (err) {
-    // Directory might already exist
+    // Directories might already exist
   }
 }
 
 async function loadData() {
   try {
-    const data = JSON.parse(await fs.readFile(QUEUE_FILE, 'utf8'));
+    var data = JSON.parse(await fs.readFile(QUEUE_FILE, 'utf8'));
     messageQueue = data.queue || [];
     currentMessage = data.current || null;
     console.log('📋 Loaded message queue:', messageQueue.length, 'messages');
@@ -121,17 +126,17 @@ async function saveData() {
 // API Integration Functions
 async function fetchWeather() {
   try {
-    const apiKey = process.env.OPENWEATHER_API_KEY;
-    const city = process.env.WEATHER_CITY || 'London';
+    var apiKey = process.env.OPENWEATHER_API_KEY;
+    var city = process.env.WEATHER_CITY || 'London';
     
     if (!apiKey) {
       console.log('⚠️ No weather API key provided');
       return;
     }
     
-    const url = 'https://api.openweathermap.org/data/2.5/weather?q=' + city + '&appid=' + apiKey + '&units=metric';
+    var url = 'https://api.openweathermap.org/data/2.5/weather?q=' + city + '&appid=' + apiKey + '&units=metric';
     
-    const res = await axios.get(url);
+    var res = await axios.get(url);
     stats.weather = {
       temp: Math.round(res.data.main.temp * 10) / 10,
       condition: res.data.weather[0].main,
@@ -148,22 +153,22 @@ async function fetchWeather() {
 
 async function fetchAirtableData() {
   try {
-    const apiKey = process.env.AIRTABLE_API_KEY;
-    const baseId = process.env.AIRTABLE_BASE_ID;
-    const tableId = process.env.AIRTABLE_TABLE_ID;
+    var apiKey = process.env.AIRTABLE_API_KEY;
+    var baseId = process.env.AIRTABLE_BASE_ID;
+    var tableId = process.env.AIRTABLE_TABLE_ID;
     
     if (!apiKey || !baseId || !tableId) {
       console.log('⚠️ Airtable credentials not complete');
       return;
     }
     
-    const url = 'https://api.airtable.com/v0/' + baseId + '/' + tableId;
-    const response = await axios.get(url, {
+    var url = 'https://api.airtable.com/v0/' + baseId + '/' + tableId;
+    var response = await axios.get(url, {
       headers: { Authorization: 'Bearer ' + apiKey }
     });
 
-    let totalKwh = 0;
-    let sessionCount = 0;
+    var totalKwh = 0;
+    var sessionCount = 0;
     
     response.data.records.forEach(function(record) {
       if (record.fields.kWh) {
@@ -181,20 +186,62 @@ async function fetchAirtableData() {
   }
 }
 
+// SVG Animation Functions
+async function renderSVG(message, options) {
+  try {
+    console.log('🎨 Rendering animated SVG for:', message);
+    
+    var commitPlan = generateCommitPlan(message);
+    
+    if (!commitPlan || commitPlan.length === 0) {
+      console.log('⚠️ No commits to render for this message');
+      commitPlan = [{ x: 0, y: 0, intensity: 1, message: message }];
+    }
+    
+    // Prepare SVG options
+    var svgOptions = options || {};
+    svgOptions.message = message;
+    svgOptions.stats = stats;
+    
+    var svg = renderAnimatedSVG(commitPlan, svgOptions);
+    
+    // Save main SVG file
+    var outPath = path.join(__dirname, 'output', 'contribution-preview.svg');
+    await fs.writeFile(outPath, svg, 'utf8');
+    
+    // Save timestamped version for history
+    try {
+      var timestamp = Date.now();
+      var cleanMessage = message.replace(/[^A-Z0-9]/g, '_');
+      var historyFilename = cleanMessage + '_' + timestamp + '.svg';
+      var historyPath = path.join(__dirname, 'output', 'history', historyFilename);
+      await fs.writeFile(historyPath, svg, 'utf8');
+    } catch (historyErr) {
+      console.log('⚠️ History save failed, but main SVG saved');
+    }
+    
+    console.log('🖼️ Animated SVG rendered to:', outPath);
+    return true;
+  } catch (err) {
+    console.error('❌ SVG render failed:', err.message);
+    return false;
+  }
+}
+
 // Smart Message Generation
 async function generateSmartMessages(count, forceGenerate) {
   try {
     console.log('🤖 Generating smart messages...');
     
     if (!forceGenerate) {
-      const shouldGenerate = await checkShouldGenerate();
+      var shouldGenerate = await checkShouldGenerate();
       if (!shouldGenerate) {
         console.log('⏭️ Smart generation not needed yet');
         return [];
       }
     }
     
-    const messages = messageGenerator.generateMessages(
+    var messages = messageGenerator.generateMessages(
       stats.weather,
       { kwhCharged: stats.kwhCharged, sessions: stats.sessions },
       count || 3
@@ -203,7 +250,7 @@ async function generateSmartMessages(count, forceGenerate) {
     console.log('✨ Generated messages:', messages);
     
     // Add to queue (avoid duplicates)
-    let addedCount = 0;
+    var addedCount = 0;
     messages.forEach(function(message) {
       if (messageQueue.indexOf(message) === -1) {
         messageQueue.push(message);
@@ -226,7 +273,7 @@ async function generateSmartMessages(count, forceGenerate) {
 
 async function generateWithChatGPT() {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
+    var apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       console.log('ℹ️ No OpenAI API key, using smart generation instead');
       return await generateSmartMessages(5, true);
@@ -235,11 +282,11 @@ async function generateWithChatGPT() {
     console.log('🧠 Generating messages with ChatGPT...');
     
     // Build context for ChatGPT
-    const context = 'Current weather: ' + stats.weather.condition + ' ' + stats.weather.temp + '°C. ' +
+    var context = 'Current weather: ' + stats.weather.condition + ' ' + stats.weather.temp + '°C. ' +
                    'Energy data: ' + stats.kwhCharged + 'kWh charged, ' + stats.sessions + ' sessions. ' +
                    'Generate creative coding/tech messages for GitHub contribution graph.';
     
-    const res = await axios.post('https://api.openai.com/v1/chat/completions', {
+    var res = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-4',
       messages: [
         { 
@@ -261,8 +308,8 @@ async function generateWithChatGPT() {
     });
 
     // Parse the ChatGPT response
-    const content = res.data.choices[0].message.content;
-    const messages = content
+    var content = res.data.choices[0].message.content;
+    var messages = content
       .split('\n')
       .map(function(line) {
         // Remove numbering, quotes, and extra characters
@@ -283,7 +330,7 @@ async function generateWithChatGPT() {
     console.log('🎨 ChatGPT generated:', messages);
     
     // Add to queue
-    let addedCount = 0;
+    var addedCount = 0;
     messages.forEach(function(message) {
       if (messageQueue.indexOf(message) === -1) {
         messageQueue.push(message);
@@ -306,10 +353,10 @@ async function generateWithChatGPT() {
 
 async function checkShouldGenerate() {
   try {
-    const data = await fs.readFile(GENERATION_FILE, 'utf8');
-    const lastGeneration = new Date(JSON.parse(data).timestamp);
-    const now = new Date();
-    const hoursSince = (now - lastGeneration) / (1000 * 60 * 60);
+    var data = await fs.readFile(GENERATION_FILE, 'utf8');
+    var lastGeneration = new Date(JSON.parse(data).timestamp);
+    var now = new Date();
+    var hoursSince = (now - lastGeneration) / (1000 * 60 * 60);
     
     return hoursSince >= 24; // Generate every 24 hours
   } catch (err) {
@@ -327,21 +374,42 @@ async function updateLastGenerationTime() {
   }
 }
 
-// Git Operations
+// Enhanced Git Operations with SVG Animation
 async function commitPattern(message) {
   try {
-    console.log('🎨 Creating commits for:', message);
-    const plan = generateCommitPlan(message);
+    console.log('🎨 Processing message with SVG animation:', message);
+    
+    // First, render the SVG animation
+    var svgSuccess = await renderSVG(message);
+    
+    if (!svgSuccess) {
+      console.log('⚠️ SVG rendering failed, but continuing with git commits');
+    }
+    
+    // Generate commit plan
+    var plan = generateCommitPlan(message);
     
     if (!plan || plan.length === 0) {
       console.log('⚠️ No commits needed for this message');
-      return false;
+      
+      // Add to history as SVG-only
+      messageHistory.push({
+        message: message,
+        timestamp: new Date().toISOString(),
+        commitCount: 0,
+        type: 'svg-only',
+        status: svgSuccess ? 'svg-rendered' : 'failed',
+        svgGenerated: svgSuccess
+      });
+      
+      await saveData();
+      return svgSuccess;
     }
     
     console.log('📅 Will create', plan.length, 'commit dates');
     
     // Group commits by date for efficiency
-    const commitsByDate = {};
+    var commitsByDate = {};
     plan.forEach(function(commit) {
       if (!commitsByDate[commit.date]) {
         commitsByDate[commit.date] = 0;
@@ -349,47 +417,56 @@ async function commitPattern(message) {
       commitsByDate[commit.date] += commit.intensity;
     });
     
-    // Make commits for each date
-    const dates = Object.keys(commitsByDate);
-    for (let i = 0; i < dates.length; i++) {
-      const date = dates[i];
-      const commitCount = commitsByDate[date];
-      
-      for (let j = 0; j < commitCount; j++) {
-        const dateStr = date + 'T' + (12 + j).toString().padStart(2, '0') + ':00:00';
-        
-        // Create commit content
-        const commitContent = message + ' - ' + (j + 1);
-        await execPromise('echo "' + commitContent + '" >> commit.log');
-        await execPromise('git add commit.log');
-        
-        const commitCmd = 'GIT_AUTHOR_DATE="' + dateStr + '" GIT_COMMITTER_DATE="' + dateStr + '" git commit -m "' + message + '"';
-        await execPromise(commitCmd);
-      }
-    }
-
-    // Push to GitHub if credentials are available
+    // Make commits for each date (only if git credentials are available)
+    var gitCommitsSuccess = false;
+    
     if (process.env.GITHUB_TOKEN && process.env.GITHUB_REPO) {
-      const pushUrl = 'https://x-access-token:' + process.env.GITHUB_TOKEN + '@github.com/' + process.env.GITHUB_REPO + '.git main';
-      await execPromise('git push ' + pushUrl);
-      console.log('🚀 Pushed to GitHub successfully');
+      try {
+        var dates = Object.keys(commitsByDate);
+        for (var i = 0; i < dates.length; i++) {
+          var date = dates[i];
+          var commitCount = commitsByDate[date];
+          
+          for (var j = 0; j < commitCount; j++) {
+            var dateStr = date + 'T' + (12 + j).toString().padStart(2, '0') + ':00:00';
+            
+            // Create commit content
+            var commitContent = message + ' - ' + (j + 1);
+            await execPromise('echo "' + commitContent + '" >> commit.log');
+            await execPromise('git add commit.log');
+            
+            var commitCmd = 'GIT_AUTHOR_DATE="' + dateStr + '" GIT_COMMITTER_DATE="' + dateStr + '" git commit -m "' + message + '"';
+            await execPromise(commitCmd);
+          }
+        }
+
+        // Push to GitHub
+        var pushUrl = 'https://x-access-token:' + process.env.GITHUB_TOKEN + '@github.com/' + process.env.GITHUB_REPO + '.git main';
+        await execPromise('git push ' + pushUrl);
+        console.log('🚀 Pushed to GitHub successfully');
+        gitCommitsSuccess = true;
+      } catch (gitErr) {
+        console.error('❌ Git operations failed:', gitErr.message);
+      }
     } else {
-      console.log('ℹ️ No GitHub credentials, commits made locally only');
+      console.log('ℹ️ No GitHub credentials, SVG-only mode');
     }
     
     // Add to history
     messageHistory.push({
       message: message,
       timestamp: new Date().toISOString(),
-      commitCount: plan.length,
+      commitCount: gitCommitsSuccess ? plan.length : 0,
       type: 'auto',
-      status: 'completed'
+      status: (svgSuccess && (gitCommitsSuccess || !process.env.GITHUB_TOKEN)) ? 'completed' : 'partial',
+      svgGenerated: svgSuccess,
+      gitCommitted: gitCommitsSuccess
     });
     
     await saveData();
-    return true;
+    return svgSuccess || gitCommitsSuccess;
   } catch (err) {
-    console.error('❌ Commit failed:', err.message);
+    console.error('❌ Pattern processing failed:', err.message);
     
     // Add failed attempt to history
     messageHistory.push({
@@ -398,7 +475,9 @@ async function commitPattern(message) {
       commitCount: 0,
       type: 'auto',
       status: 'failed',
-      error: err.message
+      error: err.message,
+      svgGenerated: false,
+      gitCommitted: false
     });
     
     await saveData();
@@ -417,8 +496,8 @@ async function processQueue() {
     }
 
     if (currentMessage) {
-      console.log('⏱️ Starting commit process for:', currentMessage);
-      const success = await commitPattern(currentMessage);
+      console.log('⏱️ Starting processing for:', currentMessage);
+      var success = await commitPattern(currentMessage);
       
       if (success) {
         console.log('✅ Successfully processed:', currentMessage);
@@ -437,15 +516,15 @@ async function processQueue() {
 
 // Main Routes
 app.get('/', function(req, res) {
-  const recentHistory = messageHistory.slice(-10).reverse();
-  const queueStatus = {
+  var recentHistory = messageHistory.slice(-10).reverse();
+  var queueStatus = {
     current: currentMessage,
     pending: messageQueue.length,
     total: messageHistory.length
   };
   
   res.render('dashboard', {
-    title: 'Enhanced GitGraph Animator',
+    title: 'Enhanced GitGraph Animator with SVG',
     currentMessage: currentMessage,
     messageQueue: messageQueue,
     stats: stats,
@@ -453,6 +532,30 @@ app.get('/', function(req, res) {
     queueStatus: queueStatus,
     layout: 'main'
   });
+});
+
+// SVG Route - Serves the animated SVG
+app.get('/svg', async function(req, res) {
+  try {
+    var svgPath = path.join(__dirname, 'output', 'contribution-preview.svg');
+    var svg = await fs.readFile(svgPath, 'utf8');
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.send(svg);
+  } catch (err) {
+    console.error('❌ Error serving SVG:', err.message);
+    
+    // Generate a placeholder SVG if none exists
+    var placeholderSVG = renderAnimatedSVG([{ x: 0, y: 0, intensity: 1 }], {
+      message: 'ADD A MESSAGE TO QUEUE',
+      stats: stats
+    });
+    
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.send(placeholderSVG);
+  }
 });
 
 // API Routes
@@ -466,8 +569,8 @@ app.get('/api/messages', function(req, res) {
 
 app.post('/api/messages', async function(req, res) {
   try {
-    const message = (req.body.message || '').toString().trim().toUpperCase();
-    const validation = validateMessage(message);
+    var message = (req.body.message || '').toString().trim().toUpperCase();
+    var validation = validateMessage(message);
     
     if (!validation.valid) {
       return res.status(400).json({ error: validation.error });
@@ -481,8 +584,11 @@ app.post('/api/messages', async function(req, res) {
     messageQueue.push(message);
     await saveData();
     
+    // Auto-process the queue
+    await processQueue();
+    
     console.log('➕ Added message to queue:', message);
-    res.json({ success: true, message: 'Message added to queue', queue: messageQueue });
+    res.json({ success: true, message: 'Message added to queue and processed', queue: messageQueue });
   } catch (err) {
     console.error('❌ Error adding message:', err);
     res.status(500).json({ error: 'Failed to add message' });
@@ -516,7 +622,7 @@ app.post('/api/rotate', async function(req, res) {
 });
 
 app.get('/api/stats', function(req, res) {
-  const extendedStats = {
+  var extendedStats = {
     weather: stats.weather,
     energy: {
       kwhCharged: stats.kwhCharged,
@@ -528,6 +634,10 @@ app.get('/api/stats', function(req, res) {
       pending: messageQueue.length,
       totalProcessed: messageHistory.length
     },
+    svg: {
+      available: true,
+      url: '/svg'
+    },
     lastUpdated: new Date().toISOString()
   };
   
@@ -536,14 +646,14 @@ app.get('/api/stats', function(req, res) {
 
 app.post('/api/preview', function(req, res) {
   try {
-    const message = (req.body.message || '').toString().trim().toUpperCase();
-    const validation = validateMessage(message);
+    var message = (req.body.message || '').toString().trim().toUpperCase();
+    var validation = validateMessage(message);
     
     if (!validation.valid) {
       return res.status(400).json({ error: validation.error });
     }
     
-    const previewData = generatePreviewData(message);
+    var previewData = generatePreviewData(message);
     res.json({ 
       success: true, 
       message: message, 
@@ -558,10 +668,10 @@ app.post('/api/preview', function(req, res) {
 
 app.post('/api/generate-smart', async function(req, res) {
   try {
-    const count = parseInt(req.body.count) || 5;
-    const useAI = req.body.useAI === true;
+    var count = parseInt(req.body.count) || 5;
+    var useAI = req.body.useAI === true;
     
-    let messages;
+    var messages;
     if (useAI) {
       messages = await generateWithChatGPT();
     } else {
@@ -599,8 +709,30 @@ app.post('/api/process-queue', async function(req, res) {
   }
 });
 
+// New API route to manually trigger SVG generation
+app.post('/api/generate-svg', async function(req, res) {
+  try {
+    var message = req.body.message || currentMessage;
+    if (!message) {
+      return res.status(400).json({ error: 'No message provided or in queue' });
+    }
+    
+    var success = await renderSVG(message, req.body.options);
+    
+    res.json({
+      success: success,
+      message: message,
+      svgUrl: '/svg',
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('❌ Error generating SVG:', err);
+    res.status(500).json({ error: 'Failed to generate SVG' });
+  }
+});
+
 app.get('/api/export', function(req, res) {
-  const exportData = {
+  var exportData = {
     queue: messageQueue,
     currentMessage: currentMessage,
     history: messageHistory,
@@ -620,6 +752,17 @@ async function startServer() {
     await loadData();
     await fetchWeather();
     await fetchAirtableData();
+    
+    // Process any existing queue items on startup and generate initial SVG
+    await processQueue();
+    
+    // If no SVG exists, create a welcome one
+    try {
+      await fs.access(path.join(__dirname, 'output', 'contribution-preview.svg'));
+    } catch (err) {
+      console.log('🎨 Creating initial welcome SVG...');
+      await renderSVG('WELCOME TO GITGRAPH');
+    }
     
     // Schedule cron jobs
     console.log('⏰ Setting up scheduled tasks...');
@@ -649,10 +792,11 @@ async function startServer() {
       generateWithChatGPT();
     });
 
-    const PORT = process.env.PORT || 3001;
+    var PORT = process.env.PORT || 3001;
     app.listen(PORT, function() {
-      console.log('\n🚀 Enhanced GitGraph Animator running!');
+      console.log('\n🚀 Enhanced GitGraph Animator with SVG running!');
       console.log('📍 URL: http://localhost:' + PORT);
+      console.log('🖼️ SVG: http://localhost:' + PORT + '/svg');
       console.log('📊 Queue: ' + messageQueue.length + ' messages');
       console.log('⚡ Energy: ' + stats.kwhCharged + 'kWh, ' + stats.sessions + ' sessions');
       console.log('🌤️ Weather: ' + stats.weather.temp + '°C, ' + stats.weather.condition);
@@ -664,7 +808,14 @@ async function startServer() {
         console.log('🤖 Smart Generation: Template-based only');
       }
       
-      console.log('\n✨ System ready!\n');
+      if (process.env.GITHUB_TOKEN && process.env.GITHUB_REPO) {
+        console.log('🔗 Git Mode: Full (SVG + GitHub commits)');
+      } else {
+        console.log('🎨 SVG Mode: Animation only (no git commits)');
+      }
+      
+      console.log('\n✨ System ready! Add messages via the web interface or API');
+      console.log('🎯 Your SVG URL: ![Contribution Preview](http://localhost:' + PORT + '/svg)\n');
     });
     
   } catch (err) {
@@ -676,7 +827,7 @@ async function startServer() {
 // Helper functions for external access
 function addToQueue(message) {
   return new Promise(function(resolve, reject) {
-    const validation = validateMessage(message);
+    var validation = validateMessage(message);
     if (!validation.valid) {
       reject(new Error(validation.error));
       return;
@@ -688,7 +839,12 @@ function addToQueue(message) {
     }
     
     messageQueue.push(message);
-    saveData().then(resolve).catch(reject);
+    saveData()
+      .then(function() {
+        return processQueue();
+      })
+      .then(resolve)
+      .catch(reject);
   });
 }
 
@@ -698,6 +854,7 @@ module.exports = {
   addToQueue: addToQueue,
   generateSmartMessages: generateSmartMessages,
   generateWithChatGPT: generateWithChatGPT,
+  renderSVG: renderSVG,
   stats: stats,
   messageQueue: messageQueue
 };
