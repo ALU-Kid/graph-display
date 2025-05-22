@@ -3,7 +3,7 @@
   "sessions": 100,
   "weather": {
     "temp": 17.1,
-    "condition": "Clouds",
+    "condition": "Rain",
     "wind": 2.1,
     "humidity": 100
   }
