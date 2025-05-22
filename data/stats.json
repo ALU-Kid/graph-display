@@ -4,7 +4,7 @@
   "weather": {
     "temp": 15.96,
     "condition": "Mist",
-    "wind": 1.03,
+    "wind": 0,
     "humidity": 100
   }
 }
