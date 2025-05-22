@@ -1,1 +1,1 @@
-![Activity](https://material-balanced-cocoa.glitch.me/svg?t=1)
+![Contribution Preview](https://material-balanced-cocoa.glitch.me/svg)
