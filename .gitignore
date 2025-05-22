@@ -1,3 +1,5 @@
 .glitchdotcom.json
 .node-gyp
 node_modules
+await execPromise('git add -f commit.log');
+
