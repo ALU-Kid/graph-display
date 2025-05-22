@@ -649,7 +649,7 @@ async function startServer() {
       generateWithChatGPT();
     });
 
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT || 3001;
     app.listen(PORT, function() {
       console.log('\n🚀 Enhanced GitGraph Animator running!');
       console.log('📍 URL: http://localhost:' + PORT);
