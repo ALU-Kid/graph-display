@@ -175,14 +175,6 @@ async function processQueue() {
   }
 }
 
-  if (currentMessage) {
-    const success = await commitPattern(currentMessage);
-    if (success) {
-      console.log('Committed pattern for:', currentMessage);
-    }
-  }
-}
-
 app.get('/', (req, res) => {
   res.render('dashboard', {
     title: 'GitGraph Animator',
@@ -221,7 +213,6 @@ app.post('/api/preview', async (req, res) => {
     res.status(500).json({ error: 'Failed to generate pixel preview' });
   }
 });
-});
 
 async function startServer() {
   await ensureDataDir();
@@ -237,4 +228,5 @@ async function startServer() {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
+module.exports = { processQueue };
 startServer().catch(err => console.error('Startup error:', err));

@@ -17,10 +17,9 @@ function messageToPixels(message, options = {}) {
   const config = { ...defaults, ...options };
   const result = Array(config.maxWidth).fill().map(() => Array(config.maxHeight).fill(0));
   
-  // Font definitions - this is simplified, you'd want more complete character maps
+  // Complete font definitions
   const fonts = {
     pixel: {
-      // Simple 3x5 pixel font
       'A': [
         [0,1,0],
         [1,0,1],
@@ -28,13 +27,357 @@ function messageToPixels(message, options = {}) {
         [1,0,1],
         [1,0,1]
       ],
-      // Add more characters...
+      'B': [
+        [1,1,0],
+        [1,0,1],
+        [1,1,0],
+        [1,0,1],
+        [1,1,0]
+      ],
+      'C': [
+        [0,1,1],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,1]
+      ],
+      'D': [
+        [1,1,0],
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [1,1,0]
+      ],
+      'E': [
+        [1,1,1],
+        [1,0,0],
+        [1,1,0],
+        [1,0,0],
+        [1,1,1]
+      ],
+      'F': [
+        [1,1,1],
+        [1,0,0],
+        [1,1,0],
+        [1,0,0],
+        [1,0,0]
+      ],
+      'G': [
+        [0,1,1],
+        [1,0,0],
+        [1,0,1],
+        [1,0,1],
+        [0,1,1]
+      ],
+      'H': [
+        [1,0,1],
+        [1,0,1],
+        [1,1,1],
+        [1,0,1],
+        [1,0,1]
+      ],
+      'I': [
+        [1,1,1],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0],
+        [1,1,1]
+      ],
+      'J': [
+        [1,1,1],
+        [0,0,1],
+        [0,0,1],
+        [1,0,1],
+        [0,1,0]
+      ],
+      'K': [
+        [1,0,1],
+        [1,1,0],
+        [1,0,0],
+        [1,1,0],
+        [1,0,1]
+      ],
+      'L': [
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,1,1]
+      ],
+      'M': [
+        [1,0,1],
+        [1,1,1],
+        [1,1,1],
+        [1,0,1],
+        [1,0,1]
+      ],
+      'N': [
+        [1,0,1],
+        [1,1,1],
+        [1,1,1],
+        [1,0,1],
+        [1,0,1]
+      ],
+      'O': [
+        [0,1,0],
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [0,1,0]
+      ],
+      'P': [
+        [1,1,0],
+        [1,0,1],
+        [1,1,0],
+        [1,0,0],
+        [1,0,0]
+      ],
+      'Q': [
+        [0,1,0],
+        [1,0,1],
+        [1,0,1],
+        [1,1,1],
+        [0,1,1]
+      ],
+      'R': [
+        [1,1,0],
+        [1,0,1],
+        [1,1,0],
+        [1,0,1],
+        [1,0,1]
+      ],
+      'S': [
+        [0,1,1],
+        [1,0,0],
+        [0,1,0],
+        [0,0,1],
+        [1,1,0]
+      ],
+      'T': [
+        [1,1,1],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0]
+      ],
+      'U': [
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [0,1,0]
+      ],
+      'V': [
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [0,1,0]
+      ],
+      'W': [
+        [1,0,1],
+        [1,0,1],
+        [1,1,1],
+        [1,1,1],
+        [1,0,1]
+      ],
+      'X': [
+        [1,0,1],
+        [1,0,1],
+        [0,1,0],
+        [1,0,1],
+        [1,0,1]
+      ],
+      'Y': [
+        [1,0,1],
+        [1,0,1],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0]
+      ],
+      'Z': [
+        [1,1,1],
+        [0,0,1],
+        [0,1,0],
+        [1,0,0],
+        [1,1,1]
+      ],
+      '0': [
+        [0,1,0],
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '1': [
+        [0,1,0],
+        [1,1,0],
+        [0,1,0],
+        [0,1,0],
+        [1,1,1]
+      ],
+      '2': [
+        [1,1,0],
+        [0,0,1],
+        [0,1,0],
+        [1,0,0],
+        [1,1,1]
+      ],
+      '3': [
+        [1,1,0],
+        [0,0,1],
+        [0,1,0],
+        [0,0,1],
+        [1,1,0]
+      ],
+      '4': [
+        [1,0,1],
+        [1,0,1],
+        [1,1,1],
+        [0,0,1],
+        [0,0,1]
+      ],
+      '5': [
+        [1,1,1],
+        [1,0,0],
+        [1,1,0],
+        [0,0,1],
+        [1,1,0]
+      ],
+      '6': [
+        [0,1,1],
+        [1,0,0],
+        [1,1,0],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '7': [
+        [1,1,1],
+        [0,0,1],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0]
+      ],
+      '8': [
+        [0,1,0],
+        [1,0,1],
+        [0,1,0],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '9': [
+        [0,1,0],
+        [1,0,1],
+        [0,1,1],
+        [0,0,1],
+        [1,1,0]
+      ],
+      '!': [
+        [0,1,0],
+        [0,1,0],
+        [0,1,0],
+        [0,0,0],
+        [0,1,0]
+      ],
+      '?': [
+        [0,1,0],
+        [1,0,1],
+        [0,0,1],
+        [0,1,0],
+        [0,1,0]
+      ],
+      ' ': [
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0]
+      ],
+      '.': [
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,1,0]
+      ],
+      ',': [
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,1,0],
+        [1,0,0]
+      ],
+      ':': [
+        [0,0,0],
+        [0,1,0],
+        [0,0,0],
+        [0,1,0],
+        [0,0,0]
+      ],
+      ';': [
+        [0,0,0],
+        [0,1,0],
+        [0,0,0],
+        [0,1,0],
+        [1,0,0]
+      ],
+      '-': [
+        [0,0,0],
+        [0,0,0],
+        [1,1,1],
+        [0,0,0],
+        [0,0,0]
+      ],
+      '+': [
+        [0,0,0],
+        [0,1,0],
+        [1,1,1],
+        [0,1,0],
+        [0,0,0]
+      ],
+      '=': [
+        [0,0,0],
+        [1,1,1],
+        [0,0,0],
+        [1,1,1],
+        [0,0,0]
+      ],
+      '(': [
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0]
+      ],
+      ')': [
+        [0,1,0],
+        [0,0,1],
+        [0,0,1],
+        [0,0,1],
+        [0,1,0]
+      ]
     },
     slim: {
-      // Define a slimmer font style
+      // Define a slimmer 2x5 font style for space efficiency
+      'A': [
+        [1,1],
+        [1,1],
+        [1,1],
+        [1,1],
+        [1,1]
+      ],
+      // Add more slim characters as needed...
     },
     bold: {
-      // Define a bolder font style
+      // Define a bolder 4x5 font style
+      'A': [
+        [0,1,1,0],
+        [1,0,0,1],
+        [1,1,1,1],
+        [1,0,0,1],
+        [1,0,0,1]
+      ],
+      // Add more bold characters as needed...
     }
   };
   
@@ -78,6 +421,48 @@ function messageToPixels(message, options = {}) {
   }
   
   return result;
+}
+
+/**
+ * Generate a commit plan from a message (required by server.js)
+ * @param {string} message - The message to convert to commits
+ * @param {Object} options - Configuration options
+ * @returns {Array} Array of commit objects with date and intensity
+ */
+function generateCommitPlan(message, options = {}) {
+  const config = {
+    startDate: null, // Will default to 52 weeks ago
+    font: 'pixel',
+    ...options
+  };
+  
+  const pixelData = messageToPixels(message, config);
+  const commits = [];
+  
+  // Calculate start date (52 weeks ago from today)
+  const endDate = new Date();
+  const startDate = config.startDate || new Date(endDate.getTime() - (52 * 7 * 24 * 60 * 60 * 1000));
+  
+  // Convert pixel data to commit plan
+  for (let week = 0; week < pixelData.length; week++) {
+    for (let day = 0; day < pixelData[week].length; day++) {
+      const intensity = pixelData[week][day];
+      
+      if (intensity > 0) {
+        // Calculate the actual date for this cell
+        const commitDate = new Date(startDate);
+        commitDate.setDate(commitDate.getDate() + (week * 7) + day);
+        
+        commits.push({
+          date: commitDate.toISOString().split('T')[0], // YYYY-MM-DD format
+          intensity: intensity,
+          message: message
+        });
+      }
+    }
+  }
+  
+  return commits;
 }
 
 /**
@@ -180,8 +565,57 @@ function previewGitHubMessage(message, containerId, options = {}) {
   };
 }
 
+/**
+ * Additional utility functions for validation and preview
+ */
+function validateMessage(message) {
+  const errors = [];
+  
+  if (!message || typeof message !== 'string') {
+    errors.push('Message is required and must be a string');
+  }
+  
+  if (message && message.length > 30) {
+    errors.push('Message must be 30 characters or less');
+  }
+  
+  if (message && message.trim().length === 0) {
+    errors.push('Message cannot be empty or only whitespace');
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors: errors
+  };
+}
+
+function getMessageWidth(message, fontType = 'pixel') {
+  const fonts = {
+    pixel: { width: 3, spacing: 1 },
+    slim: { width: 2, spacing: 1 },
+    bold: { width: 4, spacing: 1 }
+  };
+  
+  const font = fonts[fontType] || fonts.pixel;
+  let width = 0;
+  
+  for (let i = 0; i < message.length; i++) {
+    const char = message[i].toUpperCase();
+    if (char === ' ') {
+      width += 2;
+    } else {
+      width += font.width + font.spacing;
+    }
+  }
+  
+  return Math.max(0, width - font.spacing); // Remove trailing spacing
+}
+
 module.exports = {
   messageToPixels,
   renderToCanvas,
-  previewGitHubMessage
+  previewGitHubMessage,
+  generateCommitPlan,  // This was missing in your original file
+  validateMessage,
+  getMessageWidth
 };
