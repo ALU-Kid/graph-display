@@ -1,4 +1,4 @@
-// server.js - Complete Enhanced GitGraph Animator with SVG Animation (Node 10 Compatible)
+// server.js - Enhanced GitGraph Animator with Professional SVG Animation
 
 const path = require('path');
 const express = require('express');
@@ -14,7 +14,8 @@ require('dotenv').config();
 
 // Import our enhanced modules
 const SmartMessageGenerator = require('./services/messageGenerator');
-const { generateCommitPlan, generatePreviewData, validateMessage, renderAnimatedSVG } = require('./utils/pixel-preview');
+const { createAnimatedContributionGraph, GITHUB_COLORS } = require('./utils/enhanced-svg-generator');
+const { generateCommitPlan, generatePreviewData, validateMessage, messageToPixels } = require('./utils/pixel-preview');
 
 // Initialize message generator
 const messageGenerator = new SmartMessageGenerator({
@@ -59,7 +60,6 @@ const QUEUE_FILE = path.join(__dirname, 'data', 'queue.json');
 const STATS_FILE = path.join(__dirname, 'data', 'stats.json');
 const HISTORY_FILE = path.join(__dirname, 'data', 'message-history.json');
 const GENERATION_FILE = path.join(__dirname, 'data', 'last-generation.json');
-const FONT_FILE = path.join(__dirname, 'data', 'font-data.json');
 
 // Utility Functions
 async function ensureDataDir() {
@@ -186,24 +186,23 @@ async function fetchAirtableData() {
   }
 }
 
-// SVG Animation Functions
+// Enhanced SVG Animation Functions
 async function renderSVG(message, options) {
   try {
-    console.log('🎨 Rendering animated SVG for:', message);
+    console.log('🎨 Rendering enhanced animated SVG for:', message);
     
-    var commitPlan = generateCommitPlan(message);
-    
-    if (!commitPlan || commitPlan.length === 0) {
-      console.log('⚠️ No commits to render for this message');
-      commitPlan = [{ x: 0, y: 0, intensity: 1, message: message }];
-    }
-    
-    // Prepare SVG options
-    var svgOptions = options || {};
-    svgOptions.message = message;
-    svgOptions.stats = stats;
-    
-    var svg = renderAnimatedSVG(commitPlan, svgOptions);
+    // Use the enhanced generator with professional styling
+    var svg = createAnimatedContributionGraph({
+      title: 'GitGraph Animator',
+      message: message || 'GITGRAPH',
+      theme: options && options.darkMode === false ? 'light' : 'dark',
+      animationType: options && options.animationType || 'wave',
+      animationDuration: options && options.animationDuration || 2,
+      scrollingEnabled: true,
+      scrollSpeed: options && options.scrollSpeed || 15,
+      showStats: true,
+      stats: stats
+    });
     
     // Save main SVG file
     var outPath = path.join(__dirname, 'output', 'contribution-preview.svg');
@@ -220,7 +219,7 @@ async function renderSVG(message, options) {
       console.log('⚠️ History save failed, but main SVG saved');
     }
     
-    console.log('🖼️ Animated SVG rendered to:', outPath);
+    console.log('🖼️ Enhanced animated SVG rendered to:', outPath);
     return true;
   } catch (err) {
     console.error('❌ SVG render failed:', err.message);
@@ -524,7 +523,7 @@ app.get('/', function(req, res) {
   };
   
   res.render('dashboard', {
-    title: 'Enhanced GitGraph Animator with SVG',
+    title: 'Enhanced GitGraph Animator',
     currentMessage: currentMessage,
     messageQueue: messageQueue,
     stats: stats,
@@ -534,27 +533,50 @@ app.get('/', function(req, res) {
   });
 });
 
-// SVG Route - Serves the animated SVG
+// Enhanced SVG Route - Serves the animated SVG with proper headers
 app.get('/svg', async function(req, res) {
   try {
-    var svgPath = path.join(__dirname, 'output', 'contribution-preview.svg');
-    var svg = await fs.readFile(svgPath, 'utf8');
+    // Get current message or use default
+    var message = currentMessage || 'WELCOME TO GITGRAPH';
+    
+    // Generate SVG with enhanced styling
+    var svg = createAnimatedContributionGraph({
+      title: 'GitGraph Animator',
+      message: message,
+      theme: req.query.theme || 'dark',
+      animationType: req.query.animation || 'wave',
+      animationDuration: 2,
+      scrollingEnabled: true,
+      scrollSpeed: 15,
+      showStats: true,
+      stats: stats
+    });
+    
+    // Set proper headers for embedding
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    
+    // Send the SVG
     res.send(svg);
+    
+    // Save to file for reference
+    var svgPath = path.join(__dirname, 'output', 'contribution-preview.svg');
+    await fs.writeFile(svgPath, svg, 'utf8');
+    
   } catch (err) {
     console.error('❌ Error serving SVG:', err.message);
     
-    // Generate a placeholder SVG if none exists
-    var placeholderSVG = renderAnimatedSVG([{ x: 0, y: 0, intensity: 1 }], {
-      message: 'ADD A MESSAGE TO QUEUE',
-      stats: stats
+    // Generate a fallback SVG
+    var fallbackSVG = createAnimatedContributionGraph({
+      message: 'ERROR LOADING',
+      theme: 'dark',
+      showStats: false
     });
     
     res.setHeader('Content-Type', 'image/svg+xml');
-    res.send(placeholderSVG);
+    res.send(fallbackSVG);
   }
 });
 
@@ -636,7 +658,8 @@ app.get('/api/stats', function(req, res) {
     },
     svg: {
       available: true,
-      url: '/svg'
+      url: '/svg',
+      embedUrl: req.protocol + '://' + req.get('host') + '/svg'
     },
     lastUpdated: new Date().toISOString()
   };
@@ -644,7 +667,7 @@ app.get('/api/stats', function(req, res) {
   res.json(extendedStats);
 });
 
-app.post('/api/preview', function(req, res) {
+app.post('/api/preview', async function(req, res) {
   try {
     var message = (req.body.message || '').toString().trim().toUpperCase();
     var validation = validateMessage(message);
@@ -654,11 +677,21 @@ app.post('/api/preview', function(req, res) {
     }
     
     var previewData = generatePreviewData(message);
+    
+    // Generate preview SVG
+    var previewSvg = createAnimatedContributionGraph({
+      message: message,
+      theme: req.body.theme || 'dark',
+      animationType: 'fade',
+      showStats: false
+    });
+    
     res.json({ 
       success: true, 
       message: message, 
       preview: previewData,
-      estimatedCommits: previewData.commitCount
+      estimatedCommits: previewData.commitCount,
+      svgPreview: previewSvg
     });
   } catch (err) {
     console.error('❌ Error generating preview:', err);
@@ -723,6 +756,7 @@ app.post('/api/generate-svg', async function(req, res) {
       success: success,
       message: message,
       svgUrl: '/svg',
+      embedUrl: req.protocol + '://' + req.get('host') + '/svg',
       timestamp: new Date().toISOString()
     });
   } catch (err) {
@@ -794,9 +828,9 @@ async function startServer() {
 
     var PORT = process.env.PORT || 3001;
     app.listen(PORT, function() {
-      console.log('\n🚀 Enhanced GitGraph Animator with SVG running!');
-      console.log('📍 URL: http://localhost:' + PORT);
-      console.log('🖼️ SVG: http://localhost:' + PORT + '/svg');
+      console.log('\n🚀 Enhanced GitGraph Animator running!');
+      console.log('📍 Dashboard: http://localhost:' + PORT);
+      console.log('🖼️ SVG Endpoint: http://localhost:' + PORT + '/svg');
       console.log('📊 Queue: ' + messageQueue.length + ' messages');
       console.log('⚡ Energy: ' + stats.kwhCharged + 'kWh, ' + stats.sessions + ' sessions');
       console.log('🌤️ Weather: ' + stats.weather.temp + '°C, ' + stats.weather.condition);
@@ -815,7 +849,7 @@ async function startServer() {
       }
       
       console.log('\n✨ System ready! Add messages via the web interface or API');
-      console.log('🎯 Your SVG URL: ![Contribution Preview](http://localhost:' + PORT + '/svg)\n');
+      console.log('🎯 Your SVG URL for README: ![Contribution Preview](http://localhost:' + PORT + '/svg)\n');
     });
     
   } catch (err) {
