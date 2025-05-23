@@ -3,8 +3,8 @@
   "sessions": 100,
   "weather": {
     "temp": 19.3,
-    "condition": "Thunderstorm",
-    "wind": 4.6,
-    "humidity": 77
+    "condition": "Rain",
+    "wind": 3.1,
+    "humidity": 82
   }
 }
