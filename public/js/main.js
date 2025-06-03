@@ -88,7 +88,11 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(function(res) { return res.json(); })
     .then(function(data) {
       if (data.success && data.current) {
-        document.getElementById('current-message-text').textContent = data.current;
+        const el = document.getElementById('current-message-text');
+        el.classList.remove('message-transition');
+        void el.offsetWidth; // trigger reflow for restart
+        el.textContent = data.current;
+        el.classList.add('message-transition');
         updatePixelPreview(data.current);
       }
     })
@@ -110,7 +114,8 @@ function initPixelPreview() {
 function updatePixelPreview(message) {
   const currentMessage = message || document.getElementById('current-message-text')?.textContent.trim();
   if (!currentMessage || currentMessage === 'No active message') {
-    document.getElementById('preview-placeholder').classList.remove('hidden');
+    const placeholder = document.getElementById('preview-placeholder');
+    if (placeholder) placeholder.classList.remove('hidden');
     document.getElementById('preview-canvas').classList.add('hidden');
     return;
   }
@@ -119,7 +124,8 @@ function updatePixelPreview(message) {
   const isDarkMode = document.body.getAttribute('data-theme') === 'dark';
   
   // Show loading state
-  document.getElementById('preview-placeholder').classList.remove('hidden');
+  const placeholder = document.getElementById('preview-placeholder');
+  if (placeholder) placeholder.classList.remove('hidden');
   document.getElementById('preview-canvas').classList.add('hidden');
   
   // Get the preview from server
@@ -201,7 +207,8 @@ function renderPixelPreview(message, fontStyle, darkMode) {
   }
   
   // Hide placeholder, show canvas
-  document.getElementById('preview-placeholder').classList.add('hidden');
+  const placeholder = document.getElementById('preview-placeholder');
+  if (placeholder) placeholder.remove();
   document.getElementById('preview-canvas').classList.remove('hidden');
 }
 

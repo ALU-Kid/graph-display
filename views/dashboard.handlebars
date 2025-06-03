@@ -1,11 +1,11 @@
 <section class="mb-8">
   <h2 class="text-xl font-bold mb-2">Current Message</h2>
   {{#if currentMessage}}
-    <div class="p-4 bg-green-900 rounded text-white">
+    <div id="current-message-text" class="p-4 bg-green-900 rounded text-white">
       {{currentMessage}}
     </div>
   {{else}}
-    <p class="text-gray-400">No current message</p>
+    <p id="current-message-text" class="text-gray-400">No current message</p>
   {{/if}}
   <div id="pixel-preview" class="mt-4">
     <canvas id="preview-canvas" class="mx-auto"></canvas>

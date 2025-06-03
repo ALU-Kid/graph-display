@@ -4,6 +4,7 @@
  * Converts a message string to a pixel pattern for GitHub contributions
  * @param {string} message - The message to render
  * @param {Object} options - Configuration options
+ * @param {number} [options.iconScale=1] - Scale factor for built-in icon tokens
  * @returns {Array} 2D array representing weeks and days with intensity values
  */
 function messageToPixels(message, options = {}) {
@@ -11,7 +12,8 @@ function messageToPixels(message, options = {}) {
     font: 'pixel',  // 'pixel', 'slim', or 'bold'
     maxWidth: 52,   // Max weeks in GitHub contribution graph
     maxHeight: 7,   // Days per week in contribution graph
-    charSpacing: 1  // Space between characters
+    charSpacing: 1, // Space between characters
+    iconScale: 1    // Scale factor for built-in icons
   };
   
   const config = { ...defaults, ...options };
@@ -137,6 +139,23 @@ function messageToPixels(message, options = {}) {
       [1,0,0,0,0]
     ]
   };
+
+  function scaleCharMap(map, scale) {
+    if (scale <= 1) return map;
+    const scaled = [];
+    for (const row of map) {
+      const scaledRow = [];
+      for (const cell of row) {
+        for (let i = 0; i < scale; i++) {
+          scaledRow.push(cell);
+        }
+      }
+      for (let i = 0; i < scale; i++) {
+        scaled.push([...scaledRow]);
+      }
+    }
+    return scaled;
+  }
   
   let currentWeek = 0;
   
@@ -152,10 +171,10 @@ function messageToPixels(message, options = {}) {
     let advance = 0;
 
     if (remaining.startsWith(':NODE:')) {
-      charMap = icons[':NODE:'];
+      charMap = scaleCharMap(icons[':NODE:'], config.iconScale);
       advance = 5; // total 6 including loop increment
     } else if (remaining.startsWith(':PY:')) {
-      charMap = icons[':PY:'];
+      charMap = scaleCharMap(icons[':PY:'], config.iconScale);
       advance = 3; // total 4 including loop increment
     } else if (fonts[config.font][char]) {
       charMap = fonts[config.font][char];
