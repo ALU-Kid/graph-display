@@ -238,6 +238,8 @@ async function processQueue() {
     const success = await commitPattern(currentMessage);
     if (success) {
       console.log(`Successfully committed pattern for: ${currentMessage}`);
+      currentMessage = null;
+      await saveData();
     }
   }
 }
