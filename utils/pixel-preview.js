@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // utils/pixel-preview-fixed.js - Fixed version with proper alignment and animations
 
 // Import the enhanced SVG generator
@@ -51,6 +52,9 @@ const PIXEL_FONT = {
   '+': [[0,0,0],[0,1,0],[1,1,1],[0,1,0],[0,0,0]],
   '=': [[0,0,0],[1,1,1],[0,0,0],[1,1,1],[0,0,0]]
 };
+=======
+// pixel-preview.js - a module for rendering GitHub-style contribution graphs
+>>>>>>> d5128dc259b0800b81ffbc7a6030c348bf84d881
 
 /**
  * Fixed version of renderAnimatedSVG with proper alignment and professional styling
