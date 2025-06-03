@@ -1,8 +1,6 @@
-<<<<<<< HEAD
-// server.js - GitGraph Animator with Personalized SVG
-=======
+
 // server.js - Main server file for Graph Display
->>>>>>> d5128dc259b0800b81ffbc7a6030c348bf84d881
+
 
 const path = require('path');
 const express = require('express');
@@ -487,14 +485,7 @@ async function commitPattern(message) {
 }
 
 async function processQueue() {
-<<<<<<< HEAD
-  try {
-    console.log('🔄 Processing message queue...');
-    
-    if (!currentMessage && messageQueue.length > 0) {
-      currentMessage = messageQueue.shift();
-      console.log('📝 Selected message:', currentMessage);
-=======
+
   if (messageQueue.length === 0 && !currentMessage) {
     console.log('No messages in queue');
     return;
@@ -512,7 +503,6 @@ async function processQueue() {
     if (success) {
       console.log(`Successfully committed pattern for: ${currentMessage}`);
       currentMessage = null;
->>>>>>> d5128dc259b0800b81ffbc7a6030c348bf84d881
       await saveData();
     }
 
