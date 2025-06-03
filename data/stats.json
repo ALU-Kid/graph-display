@@ -2,9 +2,9 @@
   "kwhCharged": 0,
   "sessions": 100,
   "weather": {
-    "temp": 22.7,
-    "condition": "Rain",
-    "wind": 1.5,
-    "humidity": 56
+    "temp": 20.7,
+    "condition": "Clouds",
+    "wind": 2.6,
+    "humidity": 64
   }
 }
