@@ -1,4 +1,4 @@
-// pixelPreview.js - a module for rendering GitHub-style contribution graphs
+// pixel-preview.js - a module for rendering GitHub-style contribution graphs
 
 /**
  * Converts a message string to a pixel pattern for GitHub contributions
