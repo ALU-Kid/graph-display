@@ -28,7 +28,90 @@ function messageToPixels(message, options = {}) {
         [1,0,1],
         [1,0,1]
       ],
-      // Add more characters...
+      'B': [
+        [1,1,0],
+        [1,0,1],
+        [1,1,0],
+        [1,0,1],
+        [1,1,0]
+      ],
+      'C': [
+        [0,1,1],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,1]
+      ],
+      '0': [
+        [0,1,0],
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '1': [
+        [0,1,0],
+        [1,1,0],
+        [0,1,0],
+        [0,1,0],
+        [1,1,1]
+      ],
+      '2': [
+        [1,1,0],
+        [0,0,1],
+        [0,1,0],
+        [1,0,0],
+        [1,1,1]
+      ],
+      '3': [
+        [1,1,0],
+        [0,0,1],
+        [0,1,0],
+        [0,0,1],
+        [1,1,0]
+      ],
+      '4': [
+        [1,0,1],
+        [1,0,1],
+        [1,1,1],
+        [0,0,1],
+        [0,0,1]
+      ],
+      '5': [
+        [1,1,1],
+        [1,0,0],
+        [1,1,0],
+        [0,0,1],
+        [1,1,0]
+      ],
+      '6': [
+        [0,1,1],
+        [1,0,0],
+        [1,1,0],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '7': [
+        [1,1,1],
+        [0,0,1],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0]
+      ],
+      '8': [
+        [0,1,0],
+        [1,0,1],
+        [0,1,0],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '9': [
+        [0,1,0],
+        [1,0,1],
+        [0,1,1],
+        [0,0,1],
+        [1,1,0]
+      ]
     },
     slim: {
       // Define a slimmer font style
@@ -37,37 +120,60 @@ function messageToPixels(message, options = {}) {
       // Define a bolder font style
     }
   };
+
+  const icons = {
+    ':NODE:': [
+      [1,0,1,0,1],
+      [1,1,0,1,1],
+      [1,0,1,0,1],
+      [1,0,1,0,1],
+      [1,0,1,0,1]
+    ],
+    ':PY:': [
+      [1,1,1,1,0],
+      [1,0,0,0,1],
+      [1,1,1,1,0],
+      [1,0,0,0,0],
+      [1,0,0,0,0]
+    ]
+  };
   
   let currentWeek = 0;
   
   // For each character in the message
   for (let i = 0; i < message.length; i++) {
+    const remaining = message.slice(i).toUpperCase();
     const char = message[i].toUpperCase();
-    
+
     // Skip if we've reached the end of available weeks
     if (currentWeek >= config.maxWidth) break;
     
-    // If we have a pixel representation for this character
-    if (fonts[config.font][char]) {
-      const charMap = fonts[config.font][char];
-      
-      // For each column of the character
+    let charMap = null;
+    let advance = 0;
+
+    if (remaining.startsWith(':NODE:')) {
+      charMap = icons[':NODE:'];
+      advance = 5; // total 6 including loop increment
+    } else if (remaining.startsWith(':PY:')) {
+      charMap = icons[':PY:'];
+      advance = 3; // total 4 including loop increment
+    } else if (fonts[config.font][char]) {
+      charMap = fonts[config.font][char];
+    }
+
+    if (charMap) {
       for (let x = 0; x < charMap[0].length; x++) {
-        // Skip if we've reached the end of available weeks
         if (currentWeek >= config.maxWidth) break;
-        
-        // For each row of the character
         for (let y = 0; y < charMap.length; y++) {
-          // Stay within bounds of GitHub's 7-day week
           if (y < config.maxHeight) {
-            result[currentWeek][y] = charMap[y][x] ? 4 : 0; // 4 is maximum intensity
+            result[currentWeek][y] = charMap[y][x] ? 4 : 0;
           }
         }
         currentWeek++;
       }
-      
-      // Add spacing between characters
+
       currentWeek += config.charSpacing;
+      i += advance;
     } else if (char === ' ') {
       // Handle spaces
       currentWeek += 2;
