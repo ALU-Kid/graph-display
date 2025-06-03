@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -785,6 +786,42 @@
         </div>
       </div>
     </div>
+=======
+<section class="mb-8">
+  <h2 class="text-xl font-bold mb-2">Current Message</h2>
+  {{#if currentMessage}}
+    <div id="current-message-text" class="p-4 bg-green-900 rounded text-white">
+      {{currentMessage}}
+    </div>
+  {{else}}
+    <p id="current-message-text" class="text-gray-400">No current message</p>
+  {{/if}}
+  <div id="pixel-preview" class="mt-4">
+    <canvas id="preview-canvas" class="mx-auto"></canvas>
+    <div id="preview-placeholder" class="text-gray-400">Loading preview...</div>
+  </div>
+</section>
+
+<section class="mb-8">
+  <h2 class="text-xl font-bold mb-2">Message Queue</h2>
+  {{#if messageQueue.length}}
+    <ul class="list-disc pl-6 text-green-300">
+      {{#each messageQueue}}
+        <li>{{this}}</li>
+      {{/each}}
+    </ul>
+  {{else}}
+    <p class="text-gray-400">Queue is empty</p>
+  {{/if}}
+</section>
+
+<section class="mb-8">
+  <h2 class="text-xl font-bold mb-2">Stats</h2>
+  <div class="bg-gray-800 text-white p-4 rounded">
+    <p><strong>kWh Charged:</strong> {{stats.kwhCharged}}</p>
+    <p><strong>Sessions:</strong> {{stats.sessions}}</p>
+    <p><strong>Weather:</strong> {{stats.weather.condition}}, {{stats.weather.temp}}°C</p>
+>>>>>>> 4437f1c667bf522d9f80ce320a5955eead0e95b6
   </div>
 
   <script>

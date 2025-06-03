@@ -57,7 +57,15 @@ const PIXEL_FONT = {
 >>>>>>> d5128dc259b0800b81ffbc7a6030c348bf84d881
 
 /**
+<<<<<<< HEAD
  * Fixed version of renderAnimatedSVG with proper alignment and professional styling
+=======
+ * Converts a message string to a pixel pattern for GitHub contributions
+ * @param {string} message - The message to render
+ * @param {Object} options - Configuration options
+ * @param {number} [options.iconScale=1] - Scale factor for built-in icon tokens
+ * @returns {Array} 2D array representing weeks and days with intensity values
+>>>>>>> 4437f1c667bf522d9f80ce320a5955eead0e95b6
  */
 function renderAnimatedSVG(commitPlan, options) {
   options = options || {};
@@ -86,6 +94,7 @@ function renderAnimatedSVGOriginalFixed(commitPlan, options) {
   options = options || {};
   
   const defaults = {
+<<<<<<< HEAD
     cellSize: 11,
     cellGap: 2,
     colors: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
@@ -107,7 +116,155 @@ function renderAnimatedSVGOriginalFixed(commitPlan, options) {
     message: options.message || defaults.message,
     scrollSpeed: options.scrollSpeed || defaults.scrollSpeed,
     fadeIn: options.fadeIn !== undefined ? options.fadeIn : defaults.fadeIn
+=======
+    font: 'pixel',  // 'pixel', 'slim', or 'bold'
+    maxWidth: 52,   // Max weeks in GitHub contribution graph
+    maxHeight: 7,   // Days per week in contribution graph
+    charSpacing: 1, // Space between characters
+    iconScale: 1    // Scale factor for built-in icons
   };
+  
+  const config = { ...defaults, ...options };
+  const result = Array(config.maxWidth).fill().map(() => Array(config.maxHeight).fill(0));
+  
+  // Font definitions - this is simplified, you'd want more complete character maps
+  const fonts = {
+    pixel: {
+      // Simple 3x5 pixel font
+      'A': [
+        [0,1,0],
+        [1,0,1],
+        [1,1,1],
+        [1,0,1],
+        [1,0,1]
+      ],
+      'B': [
+        [1,1,0],
+        [1,0,1],
+        [1,1,0],
+        [1,0,1],
+        [1,1,0]
+      ],
+      'C': [
+        [0,1,1],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,1]
+      ],
+      '0': [
+        [0,1,0],
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '1': [
+        [0,1,0],
+        [1,1,0],
+        [0,1,0],
+        [0,1,0],
+        [1,1,1]
+      ],
+      '2': [
+        [1,1,0],
+        [0,0,1],
+        [0,1,0],
+        [1,0,0],
+        [1,1,1]
+      ],
+      '3': [
+        [1,1,0],
+        [0,0,1],
+        [0,1,0],
+        [0,0,1],
+        [1,1,0]
+      ],
+      '4': [
+        [1,0,1],
+        [1,0,1],
+        [1,1,1],
+        [0,0,1],
+        [0,0,1]
+      ],
+      '5': [
+        [1,1,1],
+        [1,0,0],
+        [1,1,0],
+        [0,0,1],
+        [1,1,0]
+      ],
+      '6': [
+        [0,1,1],
+        [1,0,0],
+        [1,1,0],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '7': [
+        [1,1,1],
+        [0,0,1],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0]
+      ],
+      '8': [
+        [0,1,0],
+        [1,0,1],
+        [0,1,0],
+        [1,0,1],
+        [0,1,0]
+      ],
+      '9': [
+        [0,1,0],
+        [1,0,1],
+        [0,1,1],
+        [0,0,1],
+        [1,1,0]
+      ]
+    },
+    slim: {
+      // Define a slimmer font style
+    },
+    bold: {
+      // Define a bolder font style
+    }
+>>>>>>> 4437f1c667bf522d9f80ce320a5955eead0e95b6
+  };
+
+  const icons = {
+    ':NODE:': [
+      [1,0,1,0,1],
+      [1,1,0,1,1],
+      [1,0,1,0,1],
+      [1,0,1,0,1],
+      [1,0,1,0,1]
+    ],
+    ':PY:': [
+      [1,1,1,1,0],
+      [1,0,0,0,1],
+      [1,1,1,1,0],
+      [1,0,0,0,0],
+      [1,0,0,0,0]
+    ]
+  };
+
+  function scaleCharMap(map, scale) {
+    if (scale <= 1) return map;
+    const scaled = [];
+    for (const row of map) {
+      const scaledRow = [];
+      for (const cell of row) {
+        for (let i = 0; i < scale; i++) {
+          scaledRow.push(cell);
+        }
+      }
+      for (let i = 0; i < scale; i++) {
+        scaled.push([...scaledRow]);
+      }
+    }
+    return scaled;
+  }
   
   // Use GitHub's actual colors
   if (!config.darkMode) {
@@ -301,7 +458,9 @@ function messageToPixels(message, options) {
   let currentWeek = 0;
   
   for (let i = 0; i < message.length; i++) {
+    const remaining = message.slice(i).toUpperCase();
     const char = message[i].toUpperCase();
+<<<<<<< HEAD
     
     if (currentWeek >= maxWidth) break;
     
@@ -313,13 +472,43 @@ function messageToPixels(message, options) {
         
         for (let y = 0; y < charMap.length; y++) {
           if (y < maxHeight) {
+=======
+
+    // Skip if we've reached the end of available weeks
+    if (currentWeek >= config.maxWidth) break;
+    
+    let charMap = null;
+    let advance = 0;
+
+    if (remaining.startsWith(':NODE:')) {
+      charMap = scaleCharMap(icons[':NODE:'], config.iconScale);
+      advance = 5; // total 6 including loop increment
+    } else if (remaining.startsWith(':PY:')) {
+      charMap = scaleCharMap(icons[':PY:'], config.iconScale);
+      advance = 3; // total 4 including loop increment
+    } else if (fonts[config.font][char]) {
+      charMap = fonts[config.font][char];
+    }
+
+    if (charMap) {
+      for (let x = 0; x < charMap[0].length; x++) {
+        if (currentWeek >= config.maxWidth) break;
+        for (let y = 0; y < charMap.length; y++) {
+          if (y < config.maxHeight) {
+>>>>>>> 4437f1c667bf522d9f80ce320a5955eead0e95b6
             result[currentWeek][y] = charMap[y][x] ? 4 : 0;
           }
         }
         currentWeek++;
       }
+<<<<<<< HEAD
       
       currentWeek += charSpacing;
+=======
+
+      currentWeek += config.charSpacing;
+      i += advance;
+>>>>>>> 4437f1c667bf522d9f80ce320a5955eead0e95b6
     } else if (char === ' ') {
       currentWeek += 2;
     } else {
