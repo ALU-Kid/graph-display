@@ -89,7 +89,7 @@ function createAnimatedContributionGraph(options) {
   
   // Calculate if scrolling is needed
   const messageWidth = getMessagePixelWidth(config.message);
-  const needsScrolling = config.scrollingEnabled && messageWidth > config.weeks;
+  const needsScrolling = !!config.scrollingEnabled;
   
   // Build the SVG
   let svg = `<?xml version="1.0" encoding="UTF-8"?>
@@ -197,7 +197,7 @@ function createAnimatedContributionGraph(options) {
   
   // Create scrolling container if needed
   if (needsScrolling) {
-    const scrollDistance = (messageWidth - config.weeks) * (config.cellSize + config.cellGap);
+    const scrollDistance = messageWidth * (config.cellSize + config.cellGap);
     svg += `\n    <g>
       <animateTransform
         attributeName="transform"
@@ -301,7 +301,7 @@ function createAnimatedContributionGraph(options) {
   <!-- Message -->
   <text x="${svgWidth / 2}" y="${messageY}" class="graph-subtitle" text-anchor="middle">
     <tspan fill="${colors.text}" font-weight="500">${config.message}</tspan>
-    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" />
   </text>`;
   
   // Close SVG
