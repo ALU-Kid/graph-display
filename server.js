@@ -485,11 +485,19 @@ async function commitPattern(message) {
 }
 
 async function processQueue() {
+<<<<<<< HEAD
 
   if (messageQueue.length === 0 && !currentMessage) {
     console.log('No messages in queue');
     return;
   }
+=======
+  try {
+    if (messageQueue.length === 0 && !currentMessage) {
+      console.log('No messages in queue');
+      return;
+    }
+>>>>>>> 6ee81b5fa323c836b8672eef4916d56b4deb10d9
   
   // If no current message, take from queue
   if (!currentMessage && messageQueue.length > 0) {
@@ -522,6 +530,9 @@ async function processQueue() {
     }
   } catch (err) {
     console.error('❌ Error processing queue:', err);
+  }
+  } catch (err) {
+    console.error('Error processing queue:', err);
   }
 }
 
