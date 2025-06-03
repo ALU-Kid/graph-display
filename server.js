@@ -1,4 +1,4 @@
-// server.js - Main server file for GitGraph Animator
+// server.js - Main server file for Graph Display
 
 const path = require('path');
 const express = require('express');
