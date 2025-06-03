@@ -222,10 +222,11 @@ async function commitPattern(message) {
 
 // Process queue and make a new commit if needed
 async function processQueue() {
-  if (messageQueue.length === 0 && !currentMessage) {
-    console.log('No messages in queue');
-    return;
-  }
+  try {
+    if (messageQueue.length === 0 && !currentMessage) {
+      console.log('No messages in queue');
+      return;
+    }
   
   // If no current message, take from queue
   if (!currentMessage && messageQueue.length > 0) {
@@ -241,6 +242,9 @@ async function processQueue() {
       currentMessage = null;
       await saveData();
     }
+  }
+  } catch (err) {
+    console.error('Error processing queue:', err);
   }
 }
 
