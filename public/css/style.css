@@ -180,3 +180,13 @@ canvas {
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
 }
+
+/* Smooth text transition when messages change */
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-transition {
+  animation: fadeSlide 0.5s ease;
+}
