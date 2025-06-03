@@ -1,3 +1,3 @@
 
-[Contribution Preview](https://material-balanced-cocoa.glitch.me/svg)
+![Contribution Preview](https://material-balanced-cocoa.glitch.me/svg)
 
