@@ -78,6 +78,24 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Preview settings changes
   document.getElementById('font-style')?.addEventListener('change', updatePixelPreview);
+
+  // Automatically rotate messages every 5 seconds
+  setInterval(function() {
+    fetch('/api/rotate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success && data.current) {
+        document.getElementById('current-message-text').textContent = data.current;
+        updatePixelPreview(data.current);
+      }
+    })
+    .catch(function(err) {
+      console.error('Auto rotate error:', err);
+    });
+  }, 5000);
 });
 
 // Pixel preview initialization
@@ -135,6 +153,11 @@ function renderPixelPreview(message, fontStyle, darkMode) {
   const canvas = document.getElementById('preview-canvas');
   const ctx = canvas.getContext('2d');
   const container = document.getElementById('pixel-preview');
+
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+  container.appendChild(canvas);
   
   // Set canvas size based on container
   canvas.width = container.clientWidth - 40; // Subtract padding
